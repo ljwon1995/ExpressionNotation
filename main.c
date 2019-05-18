@@ -46,8 +46,7 @@ int main(){
     fgets(expr, sizeof(expr), stdin);
     expr[strlen(expr)-1] = '\0';
     
-
-    postfixToInfix(expr, answer);
+    infixToPostfix(expr, answer);
     printf("%s", answer);
 }
 
@@ -428,7 +427,7 @@ void postfixToInfix(char *expr, char *result){
     stackFree(&expStack);
 }
 
-void infixToPostfix(char *expr, char *result){ //need
+void infixToPostfix(char *expr, char *result){
     stack *opStack;
     char del[] = " ";
     char *token;
@@ -449,12 +448,14 @@ void infixToPostfix(char *expr, char *result){ //need
         
         if(name == operand){
             strcat(result, token);
+            strcat(result, " ");
         }
         
         else if(name == rparen){
             
             while(strcmp(opStack->stc[opStack->top].strKey, "(")){
                 strcat(result, pop(opStack).strKey);
+                strcat(result, " ");
             }
             pop(opStack);
         }
@@ -464,6 +465,7 @@ void infixToPostfix(char *expr, char *result){ //need
             
             while(isp[stcTopName] >= icp[name]){
                 strcat(result, pop(opStack).strKey);
+                strcat(result, " ");
                 stcTopName = checkName(opStack->stc[opStack->top].strKey);
             }
             
@@ -477,9 +479,10 @@ void infixToPostfix(char *expr, char *result){ //need
     stcTopName = checkName(opStack->stc[opStack->top].strKey);
     while(stcTopName != eos){
         strcat(result, pop(opStack).strKey);
+        strcat(result, " ");
         stcTopName = checkName(opStack->stc[opStack->top].strKey);
     }
-    
+    result[strlen(result) - 1] = '\0';
     stackFree(&opStack);
 }
 
