@@ -22,10 +22,10 @@ int icp[22] = {20, 20, 12, 12, 13, 13, 13, 0, 0, 15, 15, 5, 4, 15, 10, 10, 11, 1
 int isp[22] = {0, 0, 12, 12, 13, 13, 13, 0, 0, 15, 15, 5, 4, 15, 10, 10, 11, 11, 9, 9, 10, 10};
 
 
-int infixEval(char *expr); //c
-int postfixEval(char *expr); // c
-void postfixToInfix(char *expr, char *result); //c
-void infixToPostfix(char *expr, char *result); //
+int infixEval(char *expr);
+int postfixEval(char *expr);
+void postfixToInfix(char *expr, char *result);
+void infixToPostfix(char *expr, char *result);
 int prefixEval(char *expr);
 char* prefixToInfix(char *expr);
 char* infixToPrefix(char *expr);
@@ -45,10 +45,10 @@ int main(){
     printf("Expression? : ");
     fgets(expr, sizeof(expr), stdin);
     expr[strlen(expr)-1] = '\0';
-    infixToPostfix(expr, answer);
     
-    printf("%s\n", answer);
-    printf("%d\n", infixEval(expr));
+
+    postfixToInfix(expr, answer);
+    printf("%s", answer);
 }
 
 value checkName(char *token){
@@ -147,7 +147,6 @@ int infixEval(char *expr){
     infixToPostfix(expr, result);
     return postfixEval(result);
 }
-
 
 int calculate(value name, int op1, int op2){
     switch (name) {
@@ -363,16 +362,20 @@ char* printValue(value name){
 }
 
 void makeExp(value name, char *op1, char *op2, char *answer){
-    strcpy(answer, "(");
+    strcpy(answer, "( ");
     if(name == unplus || name == unminus || name == not){
         strcat(answer, printValue(name));
+        strcat(answer, " ");
         strcat(answer, op1);
+        
+        
     }
 
     else{
-    strcat(answer, op1);
-    strcat(answer, printValue(name));
-    strcat(answer, op2);
+        strcat(answer, op1);
+        strcat(answer, printValue(name));
+        strcat(answer, " ");
+        strcat(answer, op2);
     }
     strcat(answer, ")");
 }
@@ -395,6 +398,7 @@ void postfixToInfix(char *expr, char *result){
         
         if(name == operand){
             strcpy(item.strKey, token);
+            strcat(item.strKey, " ");
             push(expStack, item);
         }
         
@@ -402,7 +406,9 @@ void postfixToInfix(char *expr, char *result){
             strcpy(op1, pop(expStack).strKey);
             makeExp(name, op1, op2, answer);
             strcpy(item.strKey, answer);
+            strcat(item.strKey, " ");
             push(expStack, item);
+            
         }
         
         else{
@@ -410,6 +416,7 @@ void postfixToInfix(char *expr, char *result){
             strcpy(op1, pop(expStack).strKey);
             makeExp(name, op1, op2, answer);
             strcpy(item.strKey, answer);
+            strcat(item.strKey, " ");
             push(expStack, item);
             
         }
@@ -417,10 +424,11 @@ void postfixToInfix(char *expr, char *result){
     }
     
     strcpy(result, pop(expStack).strKey);
+    result[strlen(result)-1] = '\0';
     stackFree(&expStack);
 }
 
-void infixToPostfix(char *expr, char *result){
+void infixToPostfix(char *expr, char *result){ //need
     stack *opStack;
     char del[] = " ";
     char *token;
