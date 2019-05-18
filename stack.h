@@ -10,7 +10,7 @@
 #define stack_h
 #include <stdio.h>
 #include <stdlib.h>
-#define MAX_EXPR_LEN 50
+#define MAX_EXPR_LEN 100
 
 
 typedef union{
