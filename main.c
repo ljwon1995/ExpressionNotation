@@ -10,9 +10,6 @@
 #include "stack.h"
 #include <string.h>
 
-
-
-
 typedef enum{
     lparen = 0, rparen, plus, minus, multi, division, mod, eos, operand, unplus, unminus, and, or,
     not, bigger, smaller, shl, shr, equal, diff, eorbig, eorsmall
@@ -21,33 +18,38 @@ typedef enum{
 int icp[22] = {20, 20, 12, 12, 13, 13, 13, 0, 0, 15, 15, 5, 4, 15, 10, 10, 11, 11, 9, 9, 10, 10};
 int isp[22] = {0, 0, 12, 12, 13, 13, 13, 0, 0, 15, 15, 5, 4, 15, 10, 10, 11, 11, 9, 9, 10, 10};
 
-
-int infixEval(char *expr);
-int postfixEval(char *expr);
-void postfixToInfix(char *expr, char *result);
-void infixToPostfix(char *expr, char *result);
+int infixEval(char *expr);//
+int postfixEval(char *expr);//
+void postfixToInfix(char *expr, char *result);//
+void infixToPostfix(char *expr, char *result);//
 int prefixEval(char *expr);
-char* prefixToInfix(char *expr);
-char* infixToPrefix(char *expr);
-char* prefixToPostfix(char *expr);
-char* postfixToPrefix(char *expr);
+void prefixToInfix(char *expr, char *result);
+void infixToPrefix(char *expr, char *result);
+void prefixToPostfix(char *expr, char *result);
+void postfixToPrefix(char *expr, char *result);
+char* printValue(value name);//
+void makeExp(value name, char *op1, char *op2, char *answer);//
+value checkName(char *token);//
+int calculate(value name, int op1, int op2);//
 
-char* printValue(value name);
-void makeExp(value name, char *op1, char *op2, char *answer);
-
-value checkName(char *token);
-int calculate(value name, int op1, int op2);
 
 int main(){
     char expr[MAX_EXPR_LEN];
     char answer[MAX_EXPR_LEN];
+    char answer2[MAX_EXPR_LEN];
+    char answer3[MAX_EXPR_LEN];
 
     printf("Expression? : ");
     fgets(expr, sizeof(expr), stdin);
     expr[strlen(expr)-1] = '\0';
     
-    infixToPostfix(expr, answer);
-    printf("%s", answer);
+    prefixToPostfix(expr, answer);
+    printf("%s\n", answer);
+    
+    postfixToPrefix(answer, answer2);
+    printf("%s\n", answer2);
+    prefixToInfix(answer2, answer3);
+    printf("%s\n", answer3);
 }
 
 value checkName(char *token){
@@ -142,7 +144,7 @@ value checkName(char *token){
 
 int infixEval(char *expr){
     char result[MAX_EXPR_LEN];
-    
+
     infixToPostfix(expr, result);
     return postfixEval(result);
 }
@@ -299,11 +301,11 @@ char* printValue(value name){
             break;
             
         case unplus:
-            return "+";
+            return "\\+";
             break;
             
         case unminus:
-            return "-";
+            return "\\-";
             break;
             
         case and:
@@ -486,15 +488,187 @@ void infixToPostfix(char *expr, char *result){
     stackFree(&opStack);
 }
 
-int prefixEval(char *expr);
+int prefixEval(char *expr){
+    stack *expStack, *answerStack;
+    char *token, del[] = " ";
+    element strItem, intItem;
+    value name;
+    int op1, op2, answer;
+    
+    //make two stacks one for expression one for answer.
+    allocStack(&expStack);
+    allocStack(&answerStack);
+    
+    //put all elements in expression into expression stack
+    token = strtok(expr, del);
+    while(token != NULL){
+        strcpy(strItem.strKey, token);
+        push(expStack, strItem);
+        token = strtok(NULL, del);
+    }
+    
+    
+    
+    while(!isEmpty(*expStack)){
+        strItem = pop(expStack);
+        name = checkName(strItem.strKey);
+        if(name == operand){
+            intItem.key = atoi(strItem.strKey);
+            push(answerStack, intItem);
+        }
+        else{//operator
+            if(name == not || name == unminus || name == unplus){
+                op1 = pop(answerStack).key;
+                intItem.key = calculate(name, op1, op2);
+                push(answerStack, intItem);
+            }
+            else{
+                op1 = pop(answerStack).key;
+                op2 = pop(answerStack).key;
+                intItem.key = calculate(name, op1, op2);
+                push(answerStack, intItem);
+            }
+        }
+    }
+    
+    answer = pop(answerStack).key;
+    stackFree(&expStack);
+    stackFree(&answerStack);
+    
+    return answer;
+}
 
-char* prefixToInfix(char *expr);
+void prefixToInfix(char *expr, char *result){
+    stack *expStack, *answerStack;
+    char *token, del[] = " ", op1[MAX_EXPR_LEN], op2[MAX_EXPR_LEN], answer[MAX_EXPR_LEN];
+    element item;
+    value name;
+    
+    //make two stacks one for expression one for answer.
+    allocStack(&expStack);
+    allocStack(&answerStack);
+    
+    //put all elements in expression into expression stack
+    token = strtok(expr, del);
+    while(token != NULL){
+        strcpy(item.strKey, token);
+        push(expStack, item);
+        token = strtok(NULL, del);
+    }
+    
+    
+    while(!isEmpty(*expStack)){
+        item = pop(expStack);
+        name = checkName(item.strKey);
+        if(name == operand){
+            //add space to the end of token;
+            strcat(item.strKey, " ");
+            push(answerStack, item);
+        }
+        else{//operator
+            if(name == not || name == unminus || name == unplus){
+                strcpy(op1, pop(answerStack).strKey);
+                makeExp(name, op1, op2, answer);
+                strcat(answer, " ");
+                strcpy(item.strKey, answer);
+                push(answerStack, item);
+            }
+            else{
+                strcpy(op1, pop(answerStack).strKey);
+                strcpy(op2, pop(answerStack).strKey);
+                makeExp(name, op1, op2, answer);
+                strcat(answer, " ");
+                strcpy(item.strKey, answer);
+                push(answerStack, item);
+            }
+        }
+    }
+    strcpy(result, pop(answerStack).strKey);
+    stackFree(&answerStack);
+    stackFree(&expStack);
+}
 
-char* infixToPrefix(char *expr);
+void infixToPrefix(char *expr, char *result){
+    stack *expStack, *operatorStack, *answerStack;
+    char *token, del[] = " ";
+    element item, tempItem;
+    value name;
+    
+    allocStack(&expStack);
+    allocStack(&operatorStack);
+    allocStack(&answerStack);
+    
+    //push all elements in expression in to expr stack.
+    token = strtok(expr, del);
+    while(token != NULL){
+        strcpy(item.strKey, token);
+        push(expStack, item);
+        token = strtok(NULL, del);
+    }
+    
+    
+    //push eos to operator stack;
+    strcpy(item.strKey, "\0");
+    push(operatorStack, item);
+    
+    while(!isEmpty(*expStack)){
+        
+        strcpy(item.strKey, pop(expStack).strKey);
+        name = checkName(item.strKey);
+        
+        if(name == operand){
+            push(answerStack, item);
+        }
+        
+        else{//operator
+            if(name == lparen){
+                //pop from operatorStack and push to answerStack until they meet rparen;
+                while(strcmp(operatorStack->stc[operatorStack->top].strKey, ")")){
+                    tempItem = pop(operatorStack);
+                    push(answerStack, tempItem);
+                }
+                pop(operatorStack);
+            }
+            
+            else{
+                while(isp[checkName(operatorStack->stc[operatorStack->top].strKey)] > icp[name]){
+                    tempItem = pop(operatorStack);
+                    push(answerStack, tempItem);
+                }
+            
+                //push to operatorStack
+                push(operatorStack, item);
+            }
+        }
+    }
+    
+    //flush operatorStack and push to answer
+    while(strcmp(operatorStack->stc[operatorStack->top].strKey, "\0")){
+        item = pop(operatorStack);
+        push(answerStack, item);
+    }
+    //pop all of answer and make a result string;
+    strcpy(result, "");
+    while(!isEmpty(*answerStack)){
+        strcat(result, pop(answerStack).strKey);
+        strcat(result, " ");
+    }
+    result[strlen(result)-1] = '\0';
+}
 
-char* prefixToPostfix(char *expr);
+void prefixToPostfix(char *expr, char *result){
+    char halfResult[MAX_EXPR_LEN];
+    
+    prefixToInfix(expr, halfResult);
+    infixToPostfix(halfResult, result);
+}
 
-char* postfixToPrefix(char *expr);
+void postfixToPrefix(char *expr, char *result){
+    char halfResult[MAX_EXPR_LEN];
+    
+    postfixToInfix(expr, halfResult);
+    infixToPrefix(halfResult, result);
+}
 
 
 
