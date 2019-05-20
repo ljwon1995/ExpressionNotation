@@ -16,7 +16,6 @@
 typedef union{
     int key;
     char strKey[MAX_EXPR_LEN];
-    char charKey;
 }element;
 
 typedef struct{
